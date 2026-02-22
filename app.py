@@ -1,4 +1,4 @@
-# app.py
+# app.py (fixed for terminal simulation)
 import streamlit as st
 import csv
 import io
@@ -14,9 +14,8 @@ st.write("Upload a firewall CSV log to analyze access events.")
 # --------------------------
 # Helper function to process CSV
 # --------------------------
-def process_firewall_csv(uploaded_file):
-    uploaded_file.seek(0)
-    file_text = io.TextIOWrapper(uploaded_file, encoding="utf-8")
+def process_firewall_csv(file_bytes):
+    file_text = io.TextIOWrapper(io.BytesIO(file_bytes), encoding="utf-8")
     reader = csv.DictReader(file_text)
 
     logs = []
@@ -44,10 +43,13 @@ def process_firewall_csv(uploaded_file):
 # --------------------------
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
+    # Read uploaded file bytes once
+    file_bytes = uploaded_file.read()
+
     # --------------------------
     # Process CSV for summary
     # --------------------------
-    logs, allow_count, deny_count, suspicious = process_firewall_csv(uploaded_file)
+    logs, allow_count, deny_count, suspicious = process_firewall_csv(file_bytes)
 
     # Display raw logs
     st.subheader("Raw Logs")
@@ -69,20 +71,17 @@ if uploaded_file is not None:
     # Terminal simulation
     # --------------------------
     st.subheader("Run CLI Command (Terminal Simulation)")
-
-    # Default command using uploaded CSV
-    default_cmd = f"python index.py --filename {uploaded_file.name}"
+    default_cmd = "python index.py --filename uploaded_file.csv"
     command = st.text_input("Enter command", default_cmd)
 
     if st.button("Run Command"):
-        # Write uploaded file to a temp file for subprocess
-        uploaded_file.seek(0)  # rewind file
+        # Write bytes to a temporary file for subprocess
         with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp_file:
-            tmp_file.write(uploaded_file.read())
+            tmp_file.write(file_bytes)
             tmp_filename = tmp_file.name
 
-        # Replace filename placeholder if used
-        cmd_to_run = command.replace(uploaded_file.name, tmp_filename)
+        # Replace placeholder with actual temp file path
+        cmd_to_run = command.replace("uploaded_file.csv", tmp_filename)
         args = shlex.split(cmd_to_run)
 
         try:
@@ -96,7 +95,6 @@ if uploaded_file is not None:
             if result.stderr:
                 st.subheader("Errors / Warnings")
                 st.code(result.stderr)
-
         except subprocess.CalledProcessError as e:
             st.error("Error running command")
             st.code(f"Return code: {e.returncode}\n\nStdout:\n{e.stdout}\n\nStderr:\n{e.stderr}")
