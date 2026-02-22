@@ -1,11 +1,11 @@
+# app.py
 import streamlit as st
 import csv
-import pytz
 import io
-from datetime import datetime, timezone, timedelta
-from log_analyzer import LogEntry
-import subprocess
 import tempfile
+import subprocess
+import shlex
+from log_analyzer import LogEntry
 
 st.set_page_config(page_title="Firewall Log Analyzer", page_icon="🛡️")
 st.title("Firewall Log Analyzer")
@@ -17,8 +17,8 @@ st.write("Upload a firewall CSV log to analyze access events.")
 def process_firewall_csv(uploaded_file):
     uploaded_file.seek(0)
     file_text = io.TextIOWrapper(uploaded_file, encoding="utf-8")
-    reader = csv.reader(file_text)
-    
+    reader = csv.DictReader(file_text)
+
     logs = []
     allow_count = 0
     deny_count = 0
@@ -26,13 +26,17 @@ def process_firewall_csv(uploaded_file):
 
     for row in reader:
         logs.append(row)
-        if row[1].lower() == "allow":
+        action = row.get("action", "").lower()
+        country = row.get("country_name", "").lower()
+
+        if action == "allow":
             allow_count += 1
-        elif row[1].lower() == "deny":
+        elif action == "deny":
             deny_count += 1
-        if row[4].lower() in ["russia", "china"]:
+
+        if country in ["russia", "china"]:
             suspicious.append(row)
-    
+
     return logs, allow_count, deny_count, suspicious
 
 # --------------------------
@@ -41,7 +45,7 @@ def process_firewall_csv(uploaded_file):
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
     # --------------------------
-    # Run local CSV processing
+    # Process CSV for summary
     # --------------------------
     logs, allow_count, deny_count, suspicious = process_firewall_csv(uploaded_file)
 
@@ -62,30 +66,37 @@ if uploaded_file is not None:
         st.write("No suspicious entries found.")
 
     # --------------------------
-    # Run terminal-like output
+    # Terminal simulation
     # --------------------------
-    st.subheader("Terminal Output (from index.py)")
-    # Save uploaded CSV to a temp file for subprocess
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp_file:
-        tmp_file.write(uploaded_file.read())
-        tmp_filename = tmp_file.name
+    st.subheader("Run CLI Command (Terminal Simulation)")
 
-    st.write(f"Running: `python index.py --filename {tmp_filename}`")
-    try:
-        result = subprocess.run(
-            ["python", "index.py", "--filename", tmp_filename],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        # Show stdout as terminal output
-        st.code(result.stdout)
+    # Default command using uploaded CSV
+    default_cmd = f"python index.py --filename {uploaded_file.name}"
+    command = st.text_input("Enter command", default_cmd)
 
-        # Show stderr if any
-        if result.stderr:
-            st.subheader("Errors / Warnings")
-            st.code(result.stderr)
+    if st.button("Run Command"):
+        # Write uploaded file to a temp file for subprocess
+        uploaded_file.seek(0)  # rewind file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            tmp_filename = tmp_file.name
 
-    except subprocess.CalledProcessError as e:
-        st.error("Error running index.py")
-        st.code(f"Return code: {e.returncode}\n\nStdout:\n{e.stdout}\n\nStderr:\n{e.stderr}")
+        # Replace filename placeholder if used
+        cmd_to_run = command.replace(uploaded_file.name, tmp_filename)
+        args = shlex.split(cmd_to_run)
+
+        try:
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            st.code(result.stdout)
+            if result.stderr:
+                st.subheader("Errors / Warnings")
+                st.code(result.stderr)
+
+        except subprocess.CalledProcessError as e:
+            st.error("Error running command")
+            st.code(f"Return code: {e.returncode}\n\nStdout:\n{e.stdout}\n\nStderr:\n{e.stderr}")
