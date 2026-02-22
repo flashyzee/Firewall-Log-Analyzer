@@ -3,6 +3,7 @@ import csv
 import pytz 
 import io
 from datetime import datetime, timezone, timedelta
+from log_analyzer import LogEntry
 
 st.set_page_config(page_title="Firewall Log Analyzer", page_icon="🛡️")
 st.title("Firewall Log Analyzer")
