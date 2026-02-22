@@ -19,20 +19,21 @@ Python tool for parsing and analyzing firewall logs to identify potential securi
 ## 💻 Tech Stack
 
 - **Language:** Python 3.10+  
-- **Libraries:** Only Python standard library (`csv`,`re`,`argparse`,`pytz`,`unittest`)  
+- **Libraries:** Only Python standard library (`csv`, `re`, `argparse`,  `pytz`, `unittest`)  
 - **Testing:** `unittest`  
 - **Data Handling:** CSV  
 
 ---
 
 ## 📂 Project Structure
+```
 firewall-log-analyzer/
 ├── log_analyzer.py # Core log parsing and analysis logic
 ├── index.py # Main script / entry point
 ├── test_log_analyzer.py # Unit tests
 ├── firewall_logs_sample.csv # Sample firewall log for testing
 ├── README.md
-
+```
 ---
 
 ## ⚡ Installation
@@ -45,15 +46,11 @@ cd firewall-log-analyzer
 
 2. Make sure you have Python 3.10+ installed—no additional packages are required.
 
-
 🛠 Usage
 
-Run the main script with the sample firewall log CSV:
-
-python index.py --filename firewall_logs_sample.csv
+Run the main script with the sample firewall log CSV: python index.py --filename firewall_logs_sample.csv
 
 Optional flags:
-
 --filename → Path to the firewall log CSV file
 
 The script will analyze the logs and output a report printed directly to your console. 
