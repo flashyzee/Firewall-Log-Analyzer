@@ -19,7 +19,7 @@ Python tool for parsing and analyzing firewall logs to identify potential securi
 ## 💻 Tech Stack
 
 - **Language:** Python 3.10+  
-- **Libraries:** Only Python standard library (`csv`, `re`, `unittest`)  
+- **Libraries:** Only Python standard library (`csv`,`re`,`argparse`,`pytz`,`unittest`)  
 - **Testing:** `unittest`  
 - **Data Handling:** CSV  
 
