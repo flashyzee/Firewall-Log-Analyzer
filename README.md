@@ -61,5 +61,4 @@ The script will analyze the logs and output a report printed directly to your co
 | 2026-02-20 12:01:00 | 192.168.1.2 | 10.0.0.5       | ALLOW  | OK       |
 | 2026-02-20 12:02:00 | 192.168.1.2 | 10.0.0.5       | DENY   | Conflict |
 
-Live Demo
-https://firewall-log-analyzer.streamlit.app/
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Click%20Here-brightgreen)](https://firewall-log-analyzer.streamlit.app)
