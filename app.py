@@ -57,7 +57,7 @@ def analyze_csv(file_bytes):
             ip_class = "Unknown"
 
         terminal_output.append(
-            f"{event_time}, {action.title()}, {source_ip}, {rule_id}, {row.get('country_name','')}, Class {ip_class}"
+            f"{event_time}, {action.title()}, {source_ip}, Class {ip_class}, {row.get('country_name','')},"
         )
 
     return logs, allow_count, deny_count, suspicious, terminal_output
