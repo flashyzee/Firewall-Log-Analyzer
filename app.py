@@ -1,42 +1,56 @@
 import streamlit as st
-import csv 
+import csv
 import pytz 
-from log_analyzer import analyze_logs
-import tempfile
+import io
+from datetime import datetime, timezone, timedelta
 
 st.set_page_config(page_title="Firewall Log Analyzer", page_icon="🛡️")
 st.title("Firewall Log Analyzer")
 st.write("Upload a firewall CSV log to analyze access events.")
 
+# --------------------------
+# Helper function to process CSV
+# --------------------------
+def process_firewall_csv(uploaded_file):
+    uploaded_file.seek(0)
+    file_text = io.TextIOWrapper(uploaded_file, encoding="utf-8")
+    reader = csv.reader(file_text)
+    
+    logs = []
+    allow_count = 0
+    deny_count = 0
+    suspicious = []
+
+    for row in reader:
+        logs.append(row)
+        if row[1].lower() == "allow":
+            allow_count += 1
+        elif row[1].lower() == "deny":
+            deny_count += 1
+        if row[4].lower() in ["russia", "china"]:
+            suspicious.append(row)
+    
+    return logs, allow_count, deny_count, suspicious
+
+# --------------------------
 # File uploader
+# --------------------------
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-
 if uploaded_file is not None:
-    # Save to a temporary file to pass filename to analyze_logs
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp_file:
-        tmp_file.write(uploaded_file.read())
-        tmp_filename = tmp_file.name
+    logs, allow_count, deny_count, suspicious = process_firewall_csv(uploaded_file)
 
-    # Run the analysis
-    try:
-        result = analyze_logs(tmp_filename)
+    # Display raw logs
+    st.subheader("Raw Logs")
+    st.dataframe(logs)
 
-        # Show raw logs
-        st.subheader("Raw Logs")
-        st.dataframe(result["logs"])
+    # Display summary
+    st.subheader("Summary")
+    st.write(f"✅ Allowed entries: {allow_count}")
+    st.write(f"❌ Denied entries: {deny_count}")
 
-        # Show summary
-        st.subheader("Summary")
-        st.write(f"✅ Allowed entries: {result['allow_count']}")
-        st.write(f"❌ Denied entries: {result['deny_count']}")
-
-        # Show suspicious entries
-        if result["suspicious"]:
-            st.subheader("Suspicious Entries")
-            st.dataframe(result["suspicious"])
-        else:
-            st.write("No suspicious entries found.")
-
-    except Exception as e:
-        st.error("Error running analysis")
-        st.text(str(e))
+    # Display suspicious entries
+    st.subheader("Suspicious Entries")
+    if suspicious:
+        st.dataframe(suspicious)
+    else:
+        st.write("No suspicious entries found.")
