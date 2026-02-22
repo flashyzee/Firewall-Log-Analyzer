@@ -1,81 +1,62 @@
 # app.py
 import streamlit as st
-import csv
-import io
-from log_analyzer import LogEntry
-from datetime import datetime, timezone, timedelta
+import tempfile
+import subprocess
+import shlex
 
 st.set_page_config(page_title="Firewall Log Analyzer", page_icon="🛡️")
 st.title("Firewall Log Analyzer")
-st.write("Upload a firewall CSV log to analyze access events.")
-
-# --------------------------
-# Helper function to process CSV and simulate index.py output
-# --------------------------
-def analyze_csv(file_bytes):
-    """
-    Process CSV bytes, count Allow/Deny, detect suspicious entries,
-    and simulate index.py terminal output.
-    """
-    file_text = io.TextIOWrapper(io.BytesIO(file_bytes), encoding="utf-8")
-    reader = csv.DictReader(file_text)
-
-    logs = []
-    allow_count = 0
-    deny_count = 0
-    suspicious = []
-    terminal_output = []
-
-    for row in reader:
-        logs.append(row)
-        action = row.get("action", "").lower()
-        country = row.get("country_name", "").lower()
-        source_ip = row.get("source_ip", "")
-        event_time = row.get("event_time", "")
-        rule_class = row.get("rule_id", "")  # Example field
-
-        # Count actions
-        if action == "allow":
-            allow_count += 1
-        elif action == "deny":
-            deny_count += 1
-
-        # Suspicious countries
-        if country in ["russia", "china"]:
-            suspicious.append(row)
-
-        # Simulate terminal output like index.py
-        terminal_output.append(
-            f"{event_time}, {action.title()}, {source_ip}, {rule_class}, {country.title()}"
-        )
-
-    return logs, allow_count, deny_count, suspicious, terminal_output
+st.write("Upload a firewall CSV log and run `index.py` CLI simulation.")
 
 # --------------------------
 # File uploader
 # --------------------------
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+
 if uploaded_file is not None:
-    file_bytes = uploaded_file.read()
+    # Save uploaded file to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        tmp_filename = tmp_file.name
 
-    # Run analysis
-    logs, allow_count, deny_count, suspicious, terminal_output = analyze_csv(file_bytes)
+    st.success(f"File saved to temporary path: {tmp_filename}")
 
     # --------------------------
-    # Display sections
+    # Terminal simulation
     # --------------------------
-    st.subheader("Raw Logs")
-    st.dataframe(logs)
+    st.subheader("Run CLI Command (Terminal Simulation)")
+    default_cmd = f"python index.py --filename {tmp_filename}"
+    command = st.text_input("Enter command", default_cmd)
 
-    st.subheader("Summary")
-    st.write(f"✅ Allowed entries: {allow_count}")
-    st.write(f"❌ Denied entries: {deny_count}")
+    if st.button("Run Command"):
+        args = shlex.split(command)
+        try:
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=True
+            )
 
-    st.subheader("Suspicious Entries")
-    if suspicious:
-        st.dataframe(suspicious)
-    else:
-        st.write("No suspicious entries found.")
+            # Split stdout lines
+            lines = result.stdout.strip().splitlines()
 
-    st.subheader("Terminal Output (Simulated)")
-    st.code("\n".join(terminal_output))
+            # Show first 5 lines initially
+            st.subheader("Terminal Output (Preview: first 5 lines)")
+            preview = lines[:5]
+            st.code("\n".join(preview))
+
+            # Option to show all
+            if len(lines) > 5:
+                if st.checkbox("Show all output"):
+                    st.subheader("Full Terminal Output")
+                    st.code("\n".join(lines))
+
+            # Show stderr if any
+            if result.stderr:
+                st.subheader("Errors / Warnings")
+                st.code(result.stderr)
+
+        except subprocess.CalledProcessError as e:
+            st.error("Error running command")
+            st.code(f"Return code: {e.returncode}\n\nStdout:\n{e.stdout}\n\nStderr:\n{e.stderr}")
