@@ -56,4 +56,11 @@ Optional flags:
 
 --filename → Path to the firewall log CSV file
 
-The script will analyze the logs and output a report (printed to console or saved, depending on your code).
+The script will analyze the logs and output a report printed directly to your console. 
+
+🎯 Example Output
+| Timestamp           | Source IP   | Destination IP | Action | Status   |
+| ------------------- | ----------- | -------------- | ------ | -------- |
+| 2026-02-20 12:01:00 | 192.168.1.2 | 10.0.0.5       | ALLOW  | OK       |
+| 2026-02-20 12:02:00 | 192.168.1.2 | 10.0.0.5       | DENY   | Conflict |
+
