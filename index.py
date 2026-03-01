@@ -19,29 +19,7 @@ def convert_to_est(event_time_str: str) -> datetime:
     dt_utc = datetime.strptime(event_time_str, "%Y-%m-%d %H:%M:%S %Z")
     dt_utc = pytz.utc.localize(dt_utc)
     dt_est = dt_utc.astimezone(pytz.timezone("US/Eastern"))
-    return dt_est
-
-def get_ipv4_class(ip) -> str:
-        """
-        Determines IPv4 address class using ONLY regular expressions.
-        Matches professor's regex teaching style.
-        """
-        # Extract first octet using regex
-        first_octet = re.sub(r"\..*", "", ip)
-
-        if re.match(r"^([1-9]|[1-9][0-9]|1[0-1][0-9]|12[0-6])$", first_octet): 
-            return "A"
-
-        elif re.match(r"^(12[8-9]|1[3-8]\d|19[01])$", first_octet):
-            return "B"
-
-        elif re.match(r"^(19[2-9]|2[0-1]\d|22[0-3])$", first_octet):
-            return "C"
-
-        elif re.match(r"^(22[4-9]|23\d)$", first_octet):
-            return "D"
-
-        return "Unknown"           
+    return dt_est        
 
 def main() -> None:
     """
@@ -76,9 +54,7 @@ def main() -> None:
 
             # Convert event_time to EST and store back in object
             entry.event_time = convert_to_est(entry.event_time.strftime("%Y-%m-%d %H:%M:%S UTC"))
-
-            entry.ip_class = get_ipv4_class(entry.source_ip)
-
+            
             entries.append(entry)
 
     # Print first 5 entries
@@ -92,4 +68,5 @@ def main() -> None:
         )
 
 if __name__ == "__main__":
+
     main()
