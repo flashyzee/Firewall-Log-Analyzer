@@ -51,7 +51,7 @@ cd firewall-log-analyzer
 Run the main script with the sample firewall log CSV: python index.py --filename firewall_logs_sample.csv
 
 Optional flags:
---filename → Path to the firewall log CSV file
+python index.py --filename → Path to the firewall log CSV file
 
 The script will analyze the logs and output a report printed directly to your console. 
 
